@@ -1,3 +1,6 @@
+![](https://github.com/dump247/jupiter-db/workflows/Build%20master%20branch/badge.svg)
+![](https://img.shields.io/maven-central/v/com.mostlycertain/jupiter-db-jdbc)
+
 # Jupiter DB Test
 
 Test extension that executes each test within a database transaction. Changes to test data are
