@@ -36,15 +36,18 @@ public final class SqlRunner {
     private static void executeSql(final Connection connection, final List<String> sqlScripts) throws SQLException {
         try (final Statement statement = connection.createStatement()) {
             for (final String sqlScript : sqlScripts) {
-                executeScript(statement, sqlScript);
+                for (final String statementSql : splitStatements(sqlScript)) {
+                    statement.execute(statementSql);
+                }
             }
         }
     }
 
-    private static void executeScript(final Statement statement, final String sqlScript) throws SQLException {
+    public static List<String> splitStatements(final String sqlScript) {
+        final List<String> statements = new ArrayList<>();
+        final StringBuilder statementBuffer = new StringBuilder();
         SqlParseState state = SqlParseState.NONE;
         char quoteChar = 0;
-        final StringBuilder statementBuffer = new StringBuilder();
 
         for (int index = 0; index < sqlScript.length(); index += 1) {
             char ch = sqlScript.charAt(index);
@@ -74,8 +77,8 @@ public final class SqlRunner {
                             }
                             break;
                         case ';':
-                            // Execute the sql without the delimiter and clear the statement buffer
-                            executeStatement(statement, statementBuffer.substring(0, statementBuffer.length() - 1));
+                            // Strip the delimiter and clear the statement buffer
+                            addStatement(statementBuffer.substring(0, statementBuffer.length() - 1), statements);
                             statementBuffer.setLength(0);
                             break;
                     }
@@ -100,17 +103,19 @@ public final class SqlRunner {
             }
         }
 
-        // Execute any final statement that does not end with a delimiter
-        executeStatement(statement, statementBuffer.toString());
+        // Add any final statement that does not end with a delimiter
+        addStatement(statementBuffer.toString(), statements);
+
+        return statements;
     }
 
     private static boolean isNextChar(final String str, final int index, final char nextChar) {
         return index < str.length() - 1 && str.charAt(index + 1) == nextChar;
     }
 
-    private static void executeStatement(final Statement statement, final String sql) throws SQLException {
-        if (sql.trim().length() > 0) {
-            statement.execute(sql);
+    private static void addStatement(final String sqlStatement, final List<String> output) {
+        if (sqlStatement.trim().length() > 0) {
+            output.add(sqlStatement);
         }
     }
 
