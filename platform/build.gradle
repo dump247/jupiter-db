@@ -9,3 +9,9 @@ dependencies {
         api "org.jooq:jooq:3.14.+"
     }
 }
+
+ext {
+    publishName = "JUnit5 Database Extension Platform"
+}
+
+description = "Specifies common dependency versions across jupiter-db artifacts."

@@ -2,10 +2,6 @@ plugins {
     id "java-library"
 }
 
-repositories {
-    jcenter()
-}
-
 dependencies {
     api platform(project(":platform"))
 
@@ -17,7 +13,10 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
 }
 
-tasks.named("test") {
-    // Use junit platform for unit tests.
-    useJUnitPlatform()
+ext {
+    publishName = "JUnit5 Database Extension for JDBC"
 }
+
+description = """
+    Extension for JUnit5 that executes each test in a transaction.
+    A JDBC Connection object with a transaction setup is injected with a parameter declared on the test.""".stripIndent()

@@ -1,0 +1,74 @@
+plugins {
+    id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            stagingProfileId = "2d261f075b996a"
+        }
+    }
+}
+
+subprojects {
+    group = "com.mostlycertain"
+    version = "1.0.0"
+
+    apply plugin: "maven-publish"
+
+    plugins.withId("java", { _ ->
+        repositories {
+            jcenter()
+        }
+
+        java {
+            withSourcesJar()
+            withJavadocJar()
+        }
+
+        tasks.withType(Test) {
+            // Use junit platform for unit tests.
+            useJUnitPlatform()
+        }
+    })
+
+    afterEvaluate {
+        publishing {
+            publications {
+                mavenJava(MavenPublication) {
+                    if (components.hasProperty("java")) {
+                        from(components.java)
+                    }
+                    artifactId "jupiter-db-${project.name}"
+
+                    pom {
+                        name = project.ext.publishName
+                        description = project.description
+                        url = "https://github.com/dump247/jupiter-db"
+
+                        licenses {
+                            license {
+                                name = "EPL-2.0"
+                                url = "https://www.eclipse.org/legal/epl-2.0/"
+                            }
+                        }
+
+                        scm {
+                            connection = "scm:git:git://github.com/dump247/jupiter-db.git"
+                            developerConnection = "scm:git:git@github.com:dump247/jupiter-db.git"
+                            url = "https://github.com/dump247/jupiter-db"
+                        }
+
+                        developers {
+                            developer {
+                                id = "dump247"
+                                name = "Cory Thomas"
+                                email = "dump247@users.noreply.github.com"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
