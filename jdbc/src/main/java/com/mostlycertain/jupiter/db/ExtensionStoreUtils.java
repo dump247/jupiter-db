@@ -22,18 +22,6 @@ final class ExtensionStoreUtils {
     }
 
     @SuppressWarnings("unchecked")
-    static <K, V> Map<K, V> getMap(
-            final ExtensionContext.Store store,
-            final String key
-    ) {
-        return Collections.unmodifiableMap(
-                store.getOrDefault(
-                        key,
-                        Map.class,
-                        Collections.emptyMap()));
-    }
-
-    @SuppressWarnings("unchecked")
     static <T> void addToList(
             final ExtensionContext.Store store,
             final String key,
