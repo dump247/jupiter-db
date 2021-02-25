@@ -12,13 +12,14 @@ import org.opentest4j.AssertionFailedError;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.getList;
+import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.getMap;
+import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.loadList;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 
@@ -38,7 +39,7 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     private static final String CONNECTIONS_KEY = "connections";
 
     @Override
-    public void beforeAll(final ExtensionContext context) throws Exception {
+    public void beforeAll(final ExtensionContext context) {
         final ExtensionContext.Store store = context.getStore(NAMESPACE);
 
         store.put(
@@ -59,7 +60,7 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     }
 
     @Override
-    public void beforeEach(final ExtensionContext context) throws Exception {
+    public void beforeEach(final ExtensionContext context) {
         final ExtensionContext.Store store = context.getStore(NAMESPACE);
 
         store.put(
@@ -70,7 +71,7 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     }
 
     @Override
-    public void afterEach(final ExtensionContext context) throws Exception {
+    public void afterEach(final ExtensionContext context) {
         final ExtensionContext.Store store = context.getStore(NAMESPACE);
         final List<TestDatabaseConnection> connections = getList(store, CONNECTIONS_KEY);
         final List<TestDatabaseConnection> failedToClose = connections.stream()
@@ -150,38 +151,6 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
                             connectionConfig),
                     ex);
         }
-    }
-
-    private <K, V> Map<K, V> getMap(
-            final ExtensionContext.Store store,
-            final String key
-    ) {
-        return Collections.unmodifiableMap(
-                store.getOrDefault(
-                        key,
-                        Map.class,
-                        Collections.emptyMap()));
-    }
-
-    private <T> List<T> loadList(
-            final ExtensionContext.Store store,
-            final String key
-    ) {
-        return store.getOrComputeIfAbsent(
-                key,
-                k -> new ArrayList<T>(),
-                List.class);
-    }
-
-    private <T> List<T> getList(
-            final ExtensionContext.Store store,
-            final String key
-    ) {
-        return Collections.unmodifiableList(
-                store.getOrDefault(
-                        key,
-                        List.class,
-                        Collections.emptyList()));
     }
 
     private static class TestDatabaseConnection {

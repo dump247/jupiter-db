@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,11 +33,9 @@ public final class DatabaseConnectionConfig {
 
     @Override
     public String toString() {
-        final StringBuilder buffer = new StringBuilder();
-        buffer.append("url=").append(url);
-        buffer.append(" username=").append(username);
-        buffer.append(" password=").append(password);
-        return buffer.toString();
+        return "url=" + getUrl()
+                + " username=" + getUsername()
+                + " password=" + getPassword();
     }
 
     /**
@@ -209,10 +206,10 @@ public final class DatabaseConnectionConfig {
             final Map<String, DatabaseConnectionConfig>... configurationMaps
     ) {
         final DatabaseConnectionConfig.Builder resolved = builder();
-        
+
         for (final Map<String, DatabaseConnectionConfig> configurationMap : configurationMaps) {
             final DatabaseConnectionConfig configuration = configurationMap.get(name);
-            
+
             if (configuration != null) {
                 if (configuration.url.length() > 0) {
                     resolved.url(configuration.url);
@@ -227,7 +224,7 @@ public final class DatabaseConnectionConfig {
                 }
             }
         }
-        
+
         return resolved.build();
     }
 
