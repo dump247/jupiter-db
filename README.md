@@ -11,7 +11,7 @@ rolled back after the test completes. This helps isolate the tests from each oth
 Add a dependency:
 
 ```groovy
-testCompile "com.mostlycertain:jupiter-db:${version}"
+testCompile "com.mostlycertain:jupiter-db-jdbc:${version}"
 ```
 
 For jOOQ support, use this dependency instead. The jOOQ library adds support for injecting
