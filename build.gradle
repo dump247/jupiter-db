@@ -14,6 +14,7 @@ subprojects {
     group = "com.mostlycertain"
 
     apply plugin: "maven-publish"
+    apply plugin: "signing"
 
     plugins.withId("java", { _ ->
         repositories {
@@ -68,6 +69,12 @@ subprojects {
                     }
                 }
             }
+        }
+
+        signing {
+            useInMemoryPgpKeys(project.releaseSigningKey, project.releaseSigningPassword)
+
+            sign(publishing.publications["mavenJava"])
         }
     }
 }
