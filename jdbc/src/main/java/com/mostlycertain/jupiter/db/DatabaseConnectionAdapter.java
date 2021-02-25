@@ -13,7 +13,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
  */
 public interface DatabaseConnectionAdapter {
     /**
-     * Test if the given parameter is handled by this adpater.
+     * Test if the given parameter is handled by this adapter.
      *
      * @param parameterContext Context for the parameter.
      * @param extensionContext Context for the {@link DatabaseTestExtension}.
