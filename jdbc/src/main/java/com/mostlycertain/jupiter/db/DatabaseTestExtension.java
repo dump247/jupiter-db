@@ -124,9 +124,7 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     ) throws ParameterResolutionException {
         final ExtensionContext.Store store = extensionContext.getStore(NAMESPACE);
         final String connectionName = parameterContext.getParameter().getName();
-        final DatabaseConnectionConfig connectionConfig = DatabaseConnectionConfig.resolve(
-                store.getOrDefault(CLASS_CONNECTION_CONFIG_KEY, DatabaseConnectionConfig.class, DatabaseConnectionConfig.getDefault()),
-                store.getOrDefault(SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY, DatabaseConnectionConfig.class, DatabaseConnectionConfig.getDefault()));
+        final DatabaseConnectionConfig connectionConfig = getConnectionConfig(store);
 
         try {
             final ManagedDatabaseConnection connection = new ManagedDatabaseConnection(connectionName, connectionConfig);
@@ -160,6 +158,19 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
                             connectionConfig),
                     ex);
         }
+    }
+
+    private DatabaseConnectionConfig getConnectionConfig(final ExtensionContext.Store store) {
+        final DatabaseConnectionConfig classConfig = store.getOrDefault(
+                CLASS_CONNECTION_CONFIG_KEY,
+                DatabaseConnectionConfig.class,
+                DatabaseConnectionConfig.getDefault());
+        final DatabaseConnectionConfig systemPropertyConfig = store.getOrDefault(
+                SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY,
+                DatabaseConnectionConfig.class,
+                DatabaseConnectionConfig.getDefault());
+
+        return classConfig.merge(systemPropertyConfig);
     }
 
     private static class ManagedDatabaseConnection implements DatabaseTestConnection {

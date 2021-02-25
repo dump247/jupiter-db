@@ -51,6 +51,13 @@ public final class DatabaseConnectionConfig {
     }
 
     /**
+     * True if none of the properties are set.
+     *
+     * @see #getDefault()
+     */
+    public boolean isEmpty() { return this == DEFAULT; }
+
+    /**
      * Establish a database connection with the settings from this configuration.
      *
      * @return A connection to the {@link #getUrl() url}.
@@ -112,34 +119,18 @@ public final class DatabaseConnectionConfig {
                 .build();
     }
 
-    /**
-     * Flatten multiple the database configuration settings.
-     *
-     * The later configurations override the earlier.
-     *
-     * @param configurations Configuration settings to resolve
-     * @return Resolved configuration settings.
-     */
-    public static DatabaseConnectionConfig resolve(
-            final DatabaseConnectionConfig... configurations
-    ) {
-        final DatabaseConnectionConfig.Builder resolved = builder();
-
-        for (final DatabaseConnectionConfig configuration : configurations) {
-            if (configuration.url.length() > 0) {
-                resolved.url(configuration.url);
-            }
-
-            if (configuration.user.length() > 0) {
-                resolved.user(configuration.user);
-            }
-
-            if (configuration.password.length() > 0) {
-                resolved.password(configuration.password);
-            }
+    public DatabaseConnectionConfig merge(final DatabaseConnectionConfig config) {
+        if (isEmpty()) {
+            return config;
+        } else if (config.isEmpty()) {
+            return this;
         }
 
-        return resolved.build();
+        return builder()
+                .url(config.url.isEmpty() ? url : config.url)
+                .user(config.user.isEmpty() ? user : config.user)
+                .password(config.password.isEmpty() ? password : config.password)
+                .build();
     }
 
     public static class Builder {
