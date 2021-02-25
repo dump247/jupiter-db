@@ -12,7 +12,6 @@ nexusPublishing {
 
 subprojects {
     group = "com.mostlycertain"
-    version = "1.0.0"
 
     apply plugin: "maven-publish"
 
