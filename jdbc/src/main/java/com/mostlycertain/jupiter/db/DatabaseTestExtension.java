@@ -133,21 +133,8 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
             final Optional<SqlRunner> classSql = get(store, CLASS_SQL_KEY, SqlRunner.class);
             final Optional<SqlRunner> methodSql = get(store, METHOD_SQL_KEY, SqlRunner.class);
 
-            if (classSql.isPresent()) {
-                classSql.get().executeInitializeSql(connection.getConnection());
-            }
-
-            if (methodSql.isPresent()) {
-                methodSql.get().executeInitializeSql(connection.getConnection());
-            }
-
-            if (classSql.isPresent()) {
-                classSql.get().executeFinalizeSql(connection.getConnection());
-            }
-
-            if (methodSql.isPresent()) {
-                methodSql.get().executeFinalizeSql(connection.getConnection());
-            }
+            executeInitializeSql(connection, classSql, methodSql);
+            executeFinalizeSql(connection, classSql, methodSql);
 
             addToList(store, CONNECTIONS_KEY, connection);
 
@@ -162,6 +149,30 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
                             connectionName,
                             connectionConfig),
                     ex);
+        }
+    }
+
+    @SafeVarargs
+    private static void executeInitializeSql(
+            final ManagedDatabaseConnection connection,
+            final Optional<SqlRunner>... runners
+    ) throws SQLException {
+        for (final Optional<SqlRunner> runner : runners) {
+            if (runner.isPresent()) {
+                runner.get().executeInitializeSql(connection.getConnection());
+            }
+        }
+    }
+
+    @SafeVarargs
+    private static void executeFinalizeSql(
+            final ManagedDatabaseConnection connection,
+            final Optional<SqlRunner>... runners
+    ) throws SQLException {
+        for (final Optional<SqlRunner> runner : runners) {
+            if (runner.isPresent()) {
+                runner.get().executeFinalizeSql(connection.getConnection());
+            }
         }
     }
 
