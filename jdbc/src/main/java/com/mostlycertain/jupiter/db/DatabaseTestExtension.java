@@ -23,7 +23,6 @@ import java.util.stream.StreamSupport;
 import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.addToList;
 import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.get;
 import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.getList;
-import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.getMap;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 
@@ -31,7 +30,6 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(DatabaseTestExtension.class);
     private static final String SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY = "systemPropertyConnectionConfig";
     private static final String CLASS_CONNECTION_CONFIG_KEY = "classConnectionConfig";
-    private static final String METHOD_CONNECTION_CONFIG_KEY = "methodConnectionConfig";
     private static final String CLASS_SQL_KEY = "classSql";
     private static final String METHOD_SQL_KEY = "methodSql";
     private static final String CONNECTIONS_KEY = "connections";
@@ -42,13 +40,12 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     public void beforeAll(final ExtensionContext context) {
         final ExtensionContext.Store store = context.getStore(NAMESPACE);
 
-        Optional.of(DatabaseConnectionConfig.readSystemProperties())
-                .filter(c -> c.size() > 0)
-                .ifPresent(c -> store.put(SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY, c));
+        store.put(
+                SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY,
+                DatabaseConnectionConfig.readSystemProperties());
 
         context.getTestClass()
-                .map(DatabaseConnectionConfig::readAnnotations)
-                .filter(c -> c.size() > 0)
+                .map(DatabaseConnectionConfig::readAnnotation)
                 .ifPresent(c -> store.put(CLASS_CONNECTION_CONFIG_KEY, c));
 
         context.getTestClass()
@@ -59,11 +56,6 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     @Override
     public void beforeEach(final ExtensionContext context) {
         final ExtensionContext.Store store = context.getStore(NAMESPACE);
-
-        context.getTestMethod()
-                .map(DatabaseConnectionConfig::readAnnotations)
-                .filter(c -> c.size() > 0)
-                .ifPresent(c -> store.put(METHOD_CONNECTION_CONFIG_KEY, c));
 
         context.getTestMethod()
                 .map(SqlRunner::readAnnotations)
@@ -131,19 +123,13 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
             final ExtensionContext extensionContext
     ) throws ParameterResolutionException {
         final ExtensionContext.Store store = extensionContext.getStore(NAMESPACE);
-        final String connectionName = parameterContext.findAnnotation(ConnectionName.class)
-                .map(ConnectionName::value)
-                .orElse(DatabaseConnection.DEFAULT_NAME);
+        final String connectionName = parameterContext.getParameter().getName();
         final DatabaseConnectionConfig connectionConfig = DatabaseConnectionConfig.resolve(
-                connectionName,
-                getMap(store, CLASS_CONNECTION_CONFIG_KEY),
-                getMap(store, METHOD_CONNECTION_CONFIG_KEY),
-                getMap(store, SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY));
+                store.getOrDefault(CLASS_CONNECTION_CONFIG_KEY, DatabaseConnectionConfig.class, DatabaseConnectionConfig.getDefault()),
+                store.getOrDefault(SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY, DatabaseConnectionConfig.class, DatabaseConnectionConfig.getDefault()));
 
         try {
-            final ManagedDatabaseConnection connection = new ManagedDatabaseConnection(
-                    connectionName,
-                    connectionConfig);
+            final ManagedDatabaseConnection connection = new ManagedDatabaseConnection(connectionName, connectionConfig);
 
             final Optional<SqlRunner> classSql = get(store, CLASS_SQL_KEY, SqlRunner.class);
             final Optional<SqlRunner> methodSql = get(store, METHOD_SQL_KEY, SqlRunner.class);

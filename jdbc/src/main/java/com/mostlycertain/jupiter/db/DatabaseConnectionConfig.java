@@ -1,44 +1,32 @@
 package com.mostlycertain.jupiter.db;
 
-import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Database connection configuration options.
  */
 public final class DatabaseConnectionConfig {
-    private static final Pattern SYSTEM_PROP_KEY = Pattern.compile("^jupiterdb\\.connection\\.([^.]+?)\\.(url|username|password)$");
-
     private static final DatabaseConnectionConfig DEFAULT = new DatabaseConnectionConfig(new Builder());
 
     private final String url;
 
-    private final String username;
+    private final String user;
 
     private final String password;
 
     private DatabaseConnectionConfig(final Builder builder) {
         this.url = builder.url;
-        this.username = builder.username;
+        this.user = builder.user;
         this.password = builder.password;
     }
 
     @Override
     public String toString() {
-        return "url=" + getUrl()
-                + " username=" + getUsername()
-                + " password=" + getPassword();
+        return "url=" + getUrl() + " user=" + getUser() + " password=" + getPassword();
     }
 
     /**
@@ -51,8 +39,8 @@ public final class DatabaseConnectionConfig {
     /**
      * Database username or empty string if not set.
      */
-    public String getUsername() {
-        return username;
+    public String getUser() {
+        return user;
     }
 
     /**
@@ -69,7 +57,7 @@ public final class DatabaseConnectionConfig {
      * @throws SQLException If a database access error occurs.
      */
     public Connection createConnection() throws SQLException {
-        return DriverManager.getConnection(this.url, this.username, this.password);
+        return DriverManager.getConnection(this.url, this.user, this.password);
     }
 
     public static Builder builder() {
@@ -86,145 +74,68 @@ public final class DatabaseConnectionConfig {
     /**
      * Read database connection settings from system properties.
      *
-     * The system properties are in the format:
-     * {@code jupterdb.connection.NAME.url|username|password} where NAME is the connection name
-     * the value is for.
+     * System property names:
+     * <ul>
+     *     <li>{@code jupterdb.database.url} JDBC URL</li>
+     *     <li>{@code jupterdb.database.user} Database user</li>
+     *     <li>{@code jupterdb.database.password} Database password</li>
+     * </ul>
      *
-     * @return Map from connection name to configuration.
+     * @return Connection configuration from system properties.
      */
-    public static Map<String, DatabaseConnectionConfig> readSystemProperties() {
-        final Map<String, DatabaseConnectionConfig.Builder> connections = new HashMap<>();
-
-        for (final Map.Entry<Object, Object> prop : System.getProperties().entrySet()) {
-            final String key = Objects.toString(prop.getKey());
-            final Matcher matcher = SYSTEM_PROP_KEY.matcher(key);
-
-            if (matcher.matches()) {
-                final String value = Objects.toString(prop.getValue()).trim();
-                final String name = matcher.group(1);
-                final String configName = matcher.group(2);
-                final DatabaseConnectionConfig.Builder connection = connections.computeIfAbsent(
-                        name,
-                        k -> DatabaseConnectionConfig.builder());
-
-                switch (configName) {
-                    case "url":
-                        connection.url(value);
-                        break;
-
-                    case "username":
-                        connection.username(value);
-                        break;
-
-                    case "password":
-                        connection.password(value);
-                        break;
-
-                    default:
-                        throw new UnsupportedOperationException("Configuration property not handled: " + configName);
-                }
-            }
-        }
-
-        return connections.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> e.getValue().build()));
-    }
-
-    /**
-     * Read database connection settings from annotations attached to an element.
-     *
-     * Reads {@link DatabaseConnection} and {@link DatabaseTest} annotations.
-     *
-     * @param element Element to read the annotations from.
-     * @return Map from connection name to configuration.
-     * @throws IllegalArgumentException If an invalid annotation is discovered. For example, if
-     *                                  duplication connection names are found.
-     */
-    public static Map<String, DatabaseConnectionConfig> readAnnotations(
-            final AnnotatedElement element
-    ) {
-        final Map<String, DatabaseConnectionConfig> connections = new HashMap<>();
-        final DatabaseConnections connectionAnnotationList = element.getAnnotation(DatabaseConnections.class);
-        final DatabaseConnection connectionAnnotation = element.getAnnotation(DatabaseConnection.class);
-        final DatabaseTest databaseTest = element.getAnnotation(DatabaseTest.class);
-
-        if (connectionAnnotation != null) {
-            connections.put(connectionAnnotation.name(), fromAnnotation(connectionAnnotation));
-        }
-
-        if (connectionAnnotationList != null) {
-            for (final DatabaseConnection annotation : connectionAnnotationList.value()) {
-                if (connections.containsKey(annotation.name())) {
-                    throw new IllegalArgumentException(format(
-                            "@DatabaseConnection annotations with duplicate name found.\nname=%s\nelement=%s",
-                            annotation.name(),
-                            element));
-                }
-
-                connections.put(annotation.name(), fromAnnotation(annotation));
-            }
-        }
-
-        if (databaseTest != null) {
-            if (connections.containsKey(databaseTest.name())) {
-                throw new IllegalArgumentException(format(
-                        "@DatabaseTest and @DatabaseConnection annotations with duplicate name found.\nname=%s\nelement=%s",
-                        databaseTest.name(),
-                        element));
-            }
-
-            connections.put(
-                    databaseTest.name(),
-                    DatabaseConnectionConfig.builder()
-                            .url(databaseTest.url().trim())
-                            .username(databaseTest.username().trim())
-                            .password(databaseTest.password().trim())
-                            .build());
-        }
-
-        return connections;
-    }
-
-    private static DatabaseConnectionConfig fromAnnotation(final DatabaseConnection annotation) {
+    public static DatabaseConnectionConfig readSystemProperties() {
         return DatabaseConnectionConfig.builder()
-                .url(annotation.url().trim())
-                .username(annotation.username().trim())
-                .password(annotation.password().trim())
+                .url(System.getProperty("jupterdb.database.url", "").trim())
+                .user(System.getProperty("jupterdb.database.user", "").trim())
+                .password(System.getProperty("jupterdb.database.password", "").trim())
                 .build();
     }
 
     /**
-     * Resolve the database configuration settings with the given name.
+     * Read database connection configuration from the {@link DatabaseTest} annotation on the
+     * test class.
      *
-     * Searches the provided maps for settings with the given name. Settings in later maps
-     * override settings in earlier maps. The resolved settings may be partially or completely
-     * configured.
+     * @param testClass Test class.
+     * @return Database connection configuration.
+     */
+    public static DatabaseConnectionConfig readAnnotation(final Class<?> testClass) {
+        final DatabaseTest annotation = testClass.getAnnotation(DatabaseTest.class);
+
+        if (annotation == null) {
+            return DatabaseConnectionConfig.getDefault();
+        }
+
+        return DatabaseConnectionConfig.builder()
+                .url(annotation.url())
+                .user(annotation.user())
+                .password(annotation.password())
+                .build();
+    }
+
+    /**
+     * Flatten multiple the database configuration settings.
      *
-     * @param name              Configuration settings name to resolve.
-     * @param configurationMaps Maps from configuration name to settings.
+     * The later configurations override the earlier.
+     *
+     * @param configurations Configuration settings to resolve
      * @return Resolved configuration settings.
      */
-    @SafeVarargs
     public static DatabaseConnectionConfig resolve(
-            final String name,
-            final Map<String, DatabaseConnectionConfig>... configurationMaps
+            final DatabaseConnectionConfig... configurations
     ) {
         final DatabaseConnectionConfig.Builder resolved = builder();
 
-        for (final Map<String, DatabaseConnectionConfig> configurationMap : configurationMaps) {
-            final DatabaseConnectionConfig configuration = configurationMap.get(name);
+        for (final DatabaseConnectionConfig configuration : configurations) {
+            if (configuration.url.length() > 0) {
+                resolved.url(configuration.url);
+            }
 
-            if (configuration != null) {
-                if (configuration.url.length() > 0) {
-                    resolved.url(configuration.url);
-                }
+            if (configuration.user.length() > 0) {
+                resolved.user(configuration.user);
+            }
 
-                if (configuration.username.length() > 0) {
-                    resolved.username(configuration.username);
-                }
-
-                if (configuration.password.length() > 0) {
-                    resolved.password(configuration.password);
-                }
+            if (configuration.password.length() > 0) {
+                resolved.password(configuration.password);
             }
         }
 
@@ -233,7 +144,7 @@ public final class DatabaseConnectionConfig {
 
     public static class Builder {
         private String url = "";
-        private String username = "";
+        private String user = "";
         private String password = "";
 
         /**
@@ -245,10 +156,10 @@ public final class DatabaseConnectionConfig {
         }
 
         /**
-         * Database username or empty string if not set.
+         * Database user or empty string if not set.
          */
-        public Builder username(final String username) {
-            this.username = requireNonNull(username);
+        public Builder user(final String user) {
+            this.user = requireNonNull(user);
             return this;
         }
 
@@ -261,7 +172,7 @@ public final class DatabaseConnectionConfig {
         }
 
         public DatabaseConnectionConfig build() {
-            if (url.isEmpty() && username.isEmpty() && password.isEmpty()) {
+            if (url.isEmpty() && user.isEmpty() && password.isEmpty()) {
                 return getDefault();
             }
 

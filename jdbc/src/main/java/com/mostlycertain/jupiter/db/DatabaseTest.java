@@ -9,32 +9,23 @@ import java.lang.annotation.Target;
 
 /**
  * Adds the database test extension to a test class.
- *
- * Multiple database connections can be configured by using {@link DatabaseConnection}
- * annotations with different names. This {@code DatabaseTest} annotation is is equivalent to a
- * {@code DatabaseConnection} annotation on the test class.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(DatabaseTestExtension.class)
 public @interface DatabaseTest {
     /**
-     * See {@link DatabaseConnection#name()}.
-     */
-    String name() default DatabaseConnection.DEFAULT_NAME;
-
-    /**
-     * See {@link DatabaseConnection#url()}.
+     * JDBC connection string.
      */
     String url() default "";
 
     /**
-     * See {@link DatabaseConnection#username()}.
+     * Database username.
      */
-    String username() default "";
+    String user() default "";
 
     /**
-     * See {@link DatabaseConnection#password()}}.
+     * Database password.
      */
     String password() default "";
 }
