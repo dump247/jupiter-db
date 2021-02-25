@@ -12,7 +12,6 @@ import org.opentest4j.AssertionFailedError;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -121,18 +120,10 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
                 .orElse(DatabaseConnection.DEFAULT_NAME);
         final DatabaseConnectionConfig connectionConfig = DatabaseConnectionConfig.resolve(
                 connectionName,
-                getMap(
-                        store,
-                        PACKAGE_CONNECTION_CONFIG_KEY),
-                getMap(
-                        store,
-                        CLASS_CONNECTION_CONFIG_KEY),
-                getMap(
-                        store,
-                        METHOD_CONNECTION_CONFIG_KEY),
-                getMap(
-                        store,
-                        SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY));
+                getMap(store, PACKAGE_CONNECTION_CONFIG_KEY),
+                getMap(store, CLASS_CONNECTION_CONFIG_KEY),
+                getMap(store, METHOD_CONNECTION_CONFIG_KEY),
+                getMap(store, SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY));
 
         try {
             final TestDatabaseConnection connection = new TestDatabaseConnection(
