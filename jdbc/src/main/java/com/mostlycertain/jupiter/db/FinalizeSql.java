@@ -10,6 +10,8 @@ import java.lang.annotation.Target;
  * SQL to execute before a test starts but after all {@link InitializeSql} has executed.
  *
  * This is useful for things like switching to the role the tests should execute as.
+ *
+ * SQL attached to the test class is executed first and then sql attached to the test method.
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
