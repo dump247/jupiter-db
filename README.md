@@ -12,7 +12,7 @@ testCompile "com.mostlycertain:jupiter-db:${version}"
 ```
 
 For jOOQ support, use this dependency instead. The jOOQ library adds support for injecting
-`org.jooq.DSLContext` instances instead of JDBC connections.
+a `org.jooq.DSLContext` instance instead of a JDBC connection.
 ```groovy
 testCompile "com.mostlycertain:jupiter-db-jooq:${version}"
 ```
@@ -131,4 +131,3 @@ class FooTest {
     }
 }
 ```
-
