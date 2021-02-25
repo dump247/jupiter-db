@@ -25,14 +25,13 @@ final class ExtensionStoreUtils {
     }
 
     @SuppressWarnings("unchecked")
-    static <T> List<T> loadList(
+    static <T> void addToList(
             final ExtensionContext.Store store,
-            final String key
+            final String key,
+            final T value
     ) {
-        return store.getOrComputeIfAbsent(
-                key,
-                k -> new ArrayList<T>(),
-                List.class);
+        store.getOrComputeIfAbsent(key, k -> new ArrayList<T>(), List.class)
+                .add(value);
     }
 
     @SuppressWarnings("unchecked")

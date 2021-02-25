@@ -17,9 +17,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.addToList;
 import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.getList;
 import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.getMap;
-import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.loadList;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 
@@ -130,7 +130,7 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
                     connectionName,
                     connectionConfig);
 
-            loadList(store, CONNECTIONS_KEY).add(connection);
+            addToList(store, CONNECTIONS_KEY, connection);
 
             return connection.connection;
         } catch (final SQLException ex) {
