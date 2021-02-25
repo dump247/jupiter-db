@@ -71,10 +71,12 @@ subprojects {
             }
         }
 
-        signing {
-            useInMemoryPgpKeys(project.releaseSigningKey, project.releaseSigningPassword)
+        if (project.hasProperty("releaseSigningKey")) {
+            signing {
+                useInMemoryPgpKeys(project.releaseSigningKey, project.releaseSigningPassword)
 
-            sign(publishing.publications["mavenJava"])
+                sign(publishing.publications["mavenJava"])
+            }
         }
     }
 }
