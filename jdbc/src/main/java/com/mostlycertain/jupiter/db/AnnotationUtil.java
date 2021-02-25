@@ -29,7 +29,7 @@ final class AnnotationUtil {
         final Repeatable repeatable = annotationClass.getAnnotation(Repeatable.class);
 
         if (repeatable == null) {
-            return Stream.of(element.getAnnotation(annotationClass));
+            return singleAnnotation(element, annotationClass);
         }
 
         try {
@@ -39,13 +39,20 @@ final class AnnotationUtil {
                 @SuppressWarnings("unchecked") final A[] result = (A[]) repeatedAnnotation.getClass().getMethod("value").invoke(repeatedAnnotation);
 
                 return Stream.of(result);
+            } else {
+                return singleAnnotation(element, annotationClass);
             }
-
-            final A annotation = element.getAnnotation(annotationClass);
-
-            return annotation == null ? Stream.empty() : Stream.of(annotation);
         } catch (final NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private static <A extends Annotation> Stream<A> singleAnnotation(
+            final AnnotatedElement element,
+            final Class<A> annotationClass
+    ) {
+        final A annotation = element.getAnnotation(annotationClass);
+
+        return annotation == null ? Stream.empty() : Stream.of(annotation);
     }
 }
