@@ -6,10 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Applies multiple {@link ExecuteSqlResource} annotations to an element.
+ * Applies multiple {@link FinalizeSql} annotations to an element.
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ExecuteSqlResources {
-    ExecuteSqlResource[] value();
+public @interface FinalizeSqls {
+    FinalizeSql[] value();
 }

@@ -6,10 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Applies multiple {@link ExecuteSql} annotations to an element.
+ * Applies multiple {@link InitializeSql} annotations to an element.
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ExecuteSqls {
-    ExecuteSql[] value();
+public @interface InitializeSqls {
+    InitializeSql[] value();
 }

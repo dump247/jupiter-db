@@ -17,9 +17,9 @@ import java.lang.annotation.Target;
  * In the following example, the database connection will have url=foo, username=farb,
  * and password=foob.
  * <pre>
- * @DatabaseConnection(username="farb")
+ * &#64;DatabaseConnection(username="farb")
  * class TestClass {
- *     @DatabaseConnection(password = "foob")
+ *     &#64;DatabaseConnection(password = "foob")
  *     void test(Connection connection) {
  *         // ...
  *     }

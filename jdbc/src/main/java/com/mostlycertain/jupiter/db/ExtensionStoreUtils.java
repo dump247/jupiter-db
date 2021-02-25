@@ -6,10 +6,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 final class ExtensionStoreUtils {
     private ExtensionStoreUtils() {
         // Private so instances can not be created
+    }
+
+    static <T> Optional<T> get(
+            final ExtensionContext.Store store,
+            final String key,
+            final Class<T> valueClass
+    ) {
+        return Optional.ofNullable(store.get(key, valueClass));
     }
 
     @SuppressWarnings("unchecked")
