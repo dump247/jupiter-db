@@ -6,10 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Applies multiple {@link DatabaseConnection} annotations to an element.
+ * Applies multiple {@link ExecuteSql} annotations to an element.
  */
-@Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-public @interface DatabaseConnections {
-    DatabaseConnection[] value();
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ExecuteSqls {
+    ExecuteSql[] value();
 }

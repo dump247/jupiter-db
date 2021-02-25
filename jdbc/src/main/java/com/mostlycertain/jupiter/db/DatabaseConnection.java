@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 /**
  * Configuration for a connection to the database.
  *
- * A database connection can be configured on the package, class, or test method. The connection
+ * A database connection can be configured on the class or test method. The connection
  * settings are merged when the test is run where the lower values override the upper. Empty
  * string values are considered not set. The connection settings be set or overridden at runtime
  * with system properties.
@@ -17,9 +17,6 @@ import java.lang.annotation.Target;
  * In the following example, the database connection will have url=foo, username=farb,
  * and password=foob.
  * <pre>
- * @DatabaseConnection(url = "foo", username = "bar", password="blag")
- * package mypackage;
- *
  * @DatabaseConnection(username="farb")
  * class TestClass {
  *     @DatabaseConnection(password = "foob")
@@ -30,7 +27,7 @@ import java.lang.annotation.Target;
  * </pre>
  */
 @Repeatable(DatabaseConnections.class)
-@Target({ElementType.TYPE, ElementType.PACKAGE, ElementType.METHOD})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DatabaseConnection {
     String DEFAULT_NAME = "default";

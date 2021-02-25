@@ -12,7 +12,9 @@ import org.opentest4j.AssertionFailedError;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.UUID;
@@ -26,19 +28,13 @@ import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.getMap;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 
-/**
- * test.datasource.url
- * test.datasource.user
- * test.datasource.password
- * test.datasource.superuser.user
- * test.datasource.superuser.password
- */
 public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, ParameterResolver {
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(DatabaseTestExtension.class);
     private static final String SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY = "systemPropertyConnectionConfig";
-    private static final String PACKAGE_CONNECTION_CONFIG_KEY = "packageConnectionConfig";
     private static final String CLASS_CONNECTION_CONFIG_KEY = "classConnectionConfig";
     private static final String METHOD_CONNECTION_CONFIG_KEY = "methodConnectionConfig";
+    private static final String CLASS_SQL_KEY = "classSql";
+    private static final String METHOD_SQL_KEY = "methodSql";
     private static final String CONNECTIONS_KEY = "connections";
 
     private static ServiceLoader<DatabaseConnectionAdapter> ADAPTERS = ServiceLoader.load(DatabaseConnectionAdapter.class);
@@ -52,14 +48,14 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
                 .ifPresent(c -> store.put(SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY, c));
 
         context.getTestClass()
-                .map(c -> DatabaseConnectionConfig.readAnnotations(c.getPackage()))
-                .filter(c -> c.size() > 0)
-                .ifPresent(c -> store.put(PACKAGE_CONNECTION_CONFIG_KEY, c));
-
-        context.getTestClass()
                 .map(DatabaseConnectionConfig::readAnnotations)
                 .filter(c -> c.size() > 0)
                 .ifPresent(c -> store.put(CLASS_CONNECTION_CONFIG_KEY, c));
+
+        context.getTestClass()
+                .map(SqlRunner::readAnnotations)
+                .filter(c -> c.size() > 0)
+                .ifPresent(c -> store.put(CLASS_SQL_KEY, c));
     }
 
     @Override
@@ -70,6 +66,11 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
                 .map(DatabaseConnectionConfig::readAnnotations)
                 .filter(c -> c.size() > 0)
                 .ifPresent(c -> store.put(METHOD_CONNECTION_CONFIG_KEY, c));
+
+        context.getTestMethod()
+                .map(SqlRunner::readAnnotations)
+                .filter(c -> c.size() > 0)
+                .ifPresent(c -> store.put(METHOD_SQL_KEY, c));
     }
 
     @Override
@@ -138,7 +139,6 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
                 .orElse(DatabaseConnection.DEFAULT_NAME);
         final DatabaseConnectionConfig connectionConfig = DatabaseConnectionConfig.resolve(
                 connectionName,
-                getMap(store, PACKAGE_CONNECTION_CONFIG_KEY),
                 getMap(store, CLASS_CONNECTION_CONFIG_KEY),
                 getMap(store, METHOD_CONNECTION_CONFIG_KEY),
                 getMap(store, SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY));
@@ -147,6 +147,9 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
             final ManagedDatabaseConnection connection = new ManagedDatabaseConnection(
                     connectionName,
                     connectionConfig);
+
+            executeSql(connection, getMap(store, CLASS_SQL_KEY));
+            executeSql(connection, getMap(store, METHOD_SQL_KEY));
 
             addToList(store, CONNECTIONS_KEY, connection);
 
@@ -157,6 +160,15 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
                             connectionName,
                             connectionConfig),
                     ex);
+        }
+    }
+
+    private void executeSql(
+            final ManagedDatabaseConnection connection,
+            final Map<String, List<String>> connectionSql
+    ) throws SQLException {
+        for (final String sql : connectionSql.getOrDefault(connection.getName(), Collections.emptyList())) {
+            SqlRunner.executeScript(connection.getConnection(), sql);
         }
     }
 
