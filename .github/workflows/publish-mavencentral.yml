@@ -30,7 +30,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ORG_GRADLE_PROJECT_releaseSigningKey: ${{ secrets.releaseSigningKey }}
           ORG_GRADLE_PROJECT_releaseSigningPassword: ${{ secrets.releaseSigningPassword }}
-          ORG_GRADLE_PROJECT_sonatypeUsername=: ${{ secrets.sonatypeUsername }}
+          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.sonatypeUsername }}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.sonatypePassword }}
 
         # The GITHUB_REF tag comes in the format 'refs/tags/xxx'.
