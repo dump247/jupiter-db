@@ -125,9 +125,10 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
         final ExtensionContext.Store store = extensionContext.getStore(NAMESPACE);
         final String connectionName = parameterContext.getParameter().getName();
         final DatabaseConnectionConfig connectionConfig = getConnectionConfig(store);
+        ManagedDatabaseConnection connection = null;
 
         try {
-            final ManagedDatabaseConnection connection = new ManagedDatabaseConnection(connectionName, connectionConfig);
+            connection = new ManagedDatabaseConnection(connectionName, connectionConfig);
 
             final Optional<SqlRunner> classSql = get(store, CLASS_SQL_KEY, SqlRunner.class);
             final Optional<SqlRunner> methodSql = get(store, METHOD_SQL_KEY, SqlRunner.class);
@@ -152,6 +153,10 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
 
             return connection;
         } catch (final SQLException ex) {
+            if (connection != null) {
+                connection.close();
+            }
+
             throw new ParameterResolutionException(
                     format("Error establishing connection to database : name=%s %s",
                             connectionName,
