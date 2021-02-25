@@ -1,0 +1,24 @@
+plugins {
+    id "java-library"
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    api platform(project(":platform"))
+    api project(":jdbc")
+
+    api "org.junit.jupiter:junit-jupiter-api"
+
+    api "org.jooq:jooq"
+
+    // Use JUnit Jupiter Engine for testing.
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+}
+
+tasks.named("test") {
+    // Use junit platform for unit tests.
+    useJUnitPlatform()
+}

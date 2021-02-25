@@ -14,8 +14,11 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.List;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.addToList;
 import static com.mostlycertain.jupiter.db.ExtensionStoreUtils.getList;
@@ -37,6 +40,8 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     private static final String CLASS_CONNECTION_CONFIG_KEY = "classConnectionConfig";
     private static final String METHOD_CONNECTION_CONFIG_KEY = "methodConnectionConfig";
     private static final String CONNECTIONS_KEY = "connections";
+
+    private static ServiceLoader<DatabaseConnectionAdapter> ADAPTERS = ServiceLoader.load(DatabaseConnectionAdapter.class);
 
     @Override
     public void beforeAll(final ExtensionContext context) {
@@ -70,8 +75,8 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     @Override
     public void afterEach(final ExtensionContext context) {
         final ExtensionContext.Store store = context.getStore(NAMESPACE);
-        final List<TestDatabaseConnection> connections = getList(store, CONNECTIONS_KEY);
-        final List<TestDatabaseConnection> failedToClose = connections.stream()
+        final List<ManagedDatabaseConnection> connections = getList(store, CONNECTIONS_KEY);
+        final List<ManagedDatabaseConnection> failedToClose = connections.stream()
                 .filter(c -> !c.close())
                 .collect(Collectors.toList());
 
@@ -93,7 +98,8 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     ) throws ParameterResolutionException {
         final Class<?> parameterType = parameterContext.getParameter().getType();
 
-        return Connection.class.isAssignableFrom(parameterType);
+        return Connection.class.isAssignableFrom(parameterType)
+                || adapters().anyMatch(a -> a.supportsParameter(parameterContext, extensionContext));
     }
 
     @Override
@@ -104,13 +110,25 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
         final Class<?> parameterType = parameterContext.getParameter().getType();
 
         if (Connection.class.isAssignableFrom(parameterType)) {
-            return getConnection(parameterContext, extensionContext);
+            return getConnection(parameterContext, extensionContext).getConnection();
         } else {
-            throw new ParameterResolutionException("Unsupported parameter: " + parameterContext);
+            return adapters()
+                    .filter(a -> a.supportsParameter(parameterContext, extensionContext))
+                    .map(adapter -> adapter.resolveParameter(
+                            getConnection(parameterContext, extensionContext),
+                            parameterContext,
+                            extensionContext))
+                    .findFirst()
+                    .orElseThrow(() -> new ParameterResolutionException(
+                            "Unsupported parameter: " + parameterContext));
         }
     }
 
-    private Connection getConnection(
+    private static Stream<DatabaseConnectionAdapter> adapters() {
+        return StreamSupport.stream(ADAPTERS.spliterator(), false);
+    }
+
+    private ManagedDatabaseConnection getConnection(
             final ParameterContext parameterContext,
             final ExtensionContext extensionContext
     ) throws ParameterResolutionException {
@@ -126,13 +144,13 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
                 getMap(store, SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY));
 
         try {
-            final TestDatabaseConnection connection = new TestDatabaseConnection(
+            final ManagedDatabaseConnection connection = new ManagedDatabaseConnection(
                     connectionName,
                     connectionConfig);
 
             addToList(store, CONNECTIONS_KEY, connection);
 
-            return connection.connection;
+            return connection;
         } catch (final SQLException ex) {
             throw new ParameterResolutionException(
                     format("Error establishing connection to database : name=%s %s",
@@ -142,14 +160,14 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
         }
     }
 
-    private static class TestDatabaseConnection {
+    private static class ManagedDatabaseConnection implements DatabaseTestConnection {
         final String name;
         final DatabaseConnectionConfig configuration;
         final Connection connection;
         final Savepoint savePoint;
         SQLException closeError;
 
-        TestDatabaseConnection(
+        ManagedDatabaseConnection(
                 final String name,
                 final DatabaseConnectionConfig configuration
         ) throws SQLException {
@@ -159,6 +177,21 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
 
             connection.setAutoCommit(false);
             this.savePoint = connection.setSavepoint("test" + UUID.randomUUID().toString().replace("-", ""));
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public DatabaseConnectionConfig getConfig() {
+            return configuration;
+        }
+
+        @Override
+        public Connection getConnection() {
+            return connection;
         }
 
         boolean close() {

@@ -14,6 +14,9 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 
+/**
+ * Database connection configuration options.
+ */
 public final class DatabaseConnectionConfig {
     private static final Pattern SYSTEM_PROP_KEY = Pattern.compile("^jupiterdb\\.connection\\.([^.]+?)\\.(url|username|password)$");
 
