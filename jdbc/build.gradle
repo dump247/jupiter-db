@@ -11,6 +11,8 @@ dependencies {
 
     api "org.junit.jupiter:junit-jupiter-api"
 
+    testCompile "org.junit.jupiter:junit-jupiter-params"
+
     // Use JUnit Jupiter Engine for testing.
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
 }
