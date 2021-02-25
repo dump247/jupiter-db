@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -42,32 +43,29 @@ public class DatabaseTestExtension implements BeforeAllCallback, BeforeEachCallb
     public void beforeAll(final ExtensionContext context) {
         final ExtensionContext.Store store = context.getStore(NAMESPACE);
 
-        store.put(
-                SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY,
-                DatabaseConnectionConfig.readSystemProperties());
+        Optional.of(DatabaseConnectionConfig.readSystemProperties())
+                .filter(c -> c.size() > 0)
+                .ifPresent(c -> store.put(SYSTEM_PROPERTY_CONNECTION_CONFIG_KEY, c));
 
-        store.put(
-                PACKAGE_CONNECTION_CONFIG_KEY,
-                context.getTestClass()
-                        .map(c -> DatabaseConnectionConfig.readAnnotations(c.getPackage()))
-                        .orElse(Collections.emptyMap()));
+        context.getTestClass()
+                .map(c -> DatabaseConnectionConfig.readAnnotations(c.getPackage()))
+                .filter(c -> c.size() > 0)
+                .ifPresent(c -> store.put(PACKAGE_CONNECTION_CONFIG_KEY, c));
 
-        store.put(
-                CLASS_CONNECTION_CONFIG_KEY,
-                context.getTestClass()
-                        .map(DatabaseConnectionConfig::readAnnotations)
-                        .orElse(Collections.emptyMap()));
+        context.getTestClass()
+                .map(DatabaseConnectionConfig::readAnnotations)
+                .filter(c -> c.size() > 0)
+                .ifPresent(c -> store.put(CLASS_CONNECTION_CONFIG_KEY, c));
     }
 
     @Override
     public void beforeEach(final ExtensionContext context) {
         final ExtensionContext.Store store = context.getStore(NAMESPACE);
 
-        store.put(
-                METHOD_CONNECTION_CONFIG_KEY,
-                context.getTestMethod()
-                        .map(DatabaseConnectionConfig::readAnnotations)
-                        .orElse(Collections.emptyMap()));
+        context.getTestMethod()
+                .map(DatabaseConnectionConfig::readAnnotations)
+                .filter(c -> c.size() > 0)
+                .ifPresent(c -> store.put(METHOD_CONNECTION_CONFIG_KEY, c));
     }
 
     @Override
