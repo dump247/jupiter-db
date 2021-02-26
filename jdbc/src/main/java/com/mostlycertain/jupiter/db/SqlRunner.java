@@ -45,13 +45,13 @@ public final class SqlRunner {
 
     public static List<String> splitStatements(final String sqlScript) {
         final List<String> statements = new ArrayList<>();
-        final StringBuilder statementBuffer = new StringBuilder();
+        int statementStartIndex = 0;
+        int statementEndIndex = 0;
         SqlParseState state = SqlParseState.NONE;
         char quoteChar = 0;
 
-        for (int index = 0; index < sqlScript.length(); index += 1) {
-            char ch = sqlScript.charAt(index);
-            statementBuffer.append(ch);
+        for (statementEndIndex = 0; statementEndIndex < sqlScript.length(); statementEndIndex += 1) {
+            char ch = sqlScript.charAt(statementEndIndex);
 
             switch (state) {
                 case NONE:
@@ -63,28 +63,26 @@ public final class SqlRunner {
                             quoteChar = ch;
                             break;
                         case '-':
-                            if (isNextChar(sqlScript, index, '-')) {
+                            if (isNextChar(sqlScript, statementEndIndex, '-')) {
                                 state = SqlParseState.LINE_COMMENT;
-                                index += 1;
-                                statementBuffer.append(sqlScript.charAt(index));
+                                statementEndIndex += 1;
                             }
                             break;
                         case '/':
-                            if (isNextChar(sqlScript, index, '*')) {
+                            if (isNextChar(sqlScript, statementEndIndex, '*')) {
                                 state = SqlParseState.MULTILINE_COMMENT;
-                                index += 1;
-                                statementBuffer.append(sqlScript.charAt(index));
+                                statementEndIndex += 1;
                             }
                             break;
                         case ';':
-                            // Strip the delimiter and clear the statement buffer
-                            addStatement(statementBuffer.substring(0, statementBuffer.length() - 1), statements);
-                            statementBuffer.setLength(0);
+                            // Strip the delimiter and start a new statement after the delimiter
+                            addStatement(sqlScript.substring(statementStartIndex, statementEndIndex), statements);
+                            statementStartIndex = statementEndIndex + 1;
                             break;
                     }
                     break;
                 case QUOTE:
-                    if (quoteChar == ch && !isNextChar(sqlScript, index, quoteChar)) {
+                    if (quoteChar == ch && !isNextChar(sqlScript, statementEndIndex, quoteChar)) {
                         state = SqlParseState.NONE;
                     }
                     break;
@@ -94,17 +92,18 @@ public final class SqlRunner {
                     }
                     break;
                 case MULTILINE_COMMENT:
-                    if (ch == '*' && isNextChar(sqlScript, index, '/')) {
+                    if (ch == '*' && isNextChar(sqlScript, statementEndIndex, '/')) {
                         state = SqlParseState.NONE;
-                        index += 1;
-                        statementBuffer.append(sqlScript.charAt(index));
+                        statementEndIndex += 1;
                     }
                     break;
             }
         }
 
         // Add any final statement that does not end with a delimiter
-        addStatement(statementBuffer.toString(), statements);
+        if (statementStartIndex < statementEndIndex) {
+            addStatement(sqlScript.substring(statementStartIndex, statementEndIndex), statements);
+        }
 
         return statements;
     }
