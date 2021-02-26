@@ -127,7 +127,6 @@ class FooTest {
     }
 
     @Test
-    @InitializeSql("DELETE FROM biz")
     @InitializeSql(resource = "test_init.sql")
     void test() {
         // Do some database work
