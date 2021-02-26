@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -150,16 +151,16 @@ public final class SqlRunner {
             final AnnotatedElement element
     ) {
         final List<String> initializeSql = getAnnotations(element, InitializeSql.class)
-                .flatMap(a -> Stream.of(
-                        a.value().isEmpty() ? null : a.value(),
-                        a.resource().isEmpty() ? null : loadSqlResource(testClass, a, a.resource())))
+                .flatMap(a -> Stream.concat(
+                        Arrays.stream(a.value()),
+                        Arrays.stream(a.resource()).map(s -> loadSqlResource(testClass, a, s))))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         final List<String> finalizeSql = getAnnotations(element, FinalizeSql.class)
-                .flatMap(a -> Stream.of(
-                        a.value().isEmpty() ? null : a.value(),
-                        a.resource().isEmpty() ? null : loadSqlResource(testClass, a, a.resource())))
+                .flatMap(a -> Stream.concat(
+                        Arrays.stream(a.value()),
+                        Arrays.stream(a.resource()).map(s -> loadSqlResource(testClass, a, s))))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 

@@ -19,13 +19,15 @@ import java.lang.annotation.Target;
 public @interface FinalizeSql {
     /**
      * Raw SQL statements to execute.
+     *
+     * A single string can contain multiple statements separated by semicolon.
      */
-    String value() default "";
+    String[] value() default {};
 
     /**
-     * Name of a resource file that contains SQL statements to execute.
+     * Names of resource files that contains SQL statements to execute.
      *
      * The resource name can be relative to the test class the annotation is attached to.
      */
-    String resource() default "";
+    String[] resource() default {};
 }

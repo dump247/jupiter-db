@@ -46,10 +46,10 @@ test runs. This is useful for setting up test data.
 
 Execute SQL before each test is invoked.
 
-Inline SQL can specified with the `value` parameter. Multiple statements can be included in the
-SQL string, separated with semicolons.
+Inline SQL can specified with the `value` parameter. Multiple SQL strings can be provided. A single
+SQL string can contain multiple statements, separated by a semicolon.
 
-SQL statements can be loaded from a resource file by setting the `resource` parameter to a resource
+SQL statements can be loaded from resource files by setting the `resource` parameter to a resource
 file name. The resource file name is relative to the test class. The file can contain multiple
 statements, separated by semicolons.
 
