@@ -82,8 +82,13 @@ public final class SqlRunner {
                     }
                     break;
                 case QUOTE:
-                    if (quoteChar == ch && !isNextChar(sqlScript, statementEndIndex, quoteChar)) {
-                        state = SqlParseState.NONE;
+                    if (quoteChar == ch) {
+                        // If the next char is another quote, this is an escaped quote character
+                        if (isNextChar(sqlScript, statementEndIndex, quoteChar)) {
+                            statementEndIndex += 1;
+                        } else {
+                            state = SqlParseState.NONE;
+                        }
                     }
                     break;
                 case LINE_COMMENT:
